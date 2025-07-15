@@ -128,7 +128,7 @@ def reset_password(email: str, new_password: str):
 
 @app.post("/subscribe")
 def subscribe_email(user_email: str):
-    user = users_collection.find_one({"email": email})
+    user = users_collection.find_one({"email": user_email})
 
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or duplicate email.")
@@ -141,3 +141,135 @@ def subscribe_email(user_email: str):
     subscriptions_collection.insert_one(new_sub_json)
 
     return {"message": "Subscription successful."}
+
+
+
+@app.get("/stocks/top")
+def get_top_stocks():
+    return get_top_movers()
+
+@app.get("/goals/summary")
+def get_goals_list(user_id: int):
+    goals = goals_collection.find({'user_id': user_id}).sort('target_date')
+    if not goals:
+        return {"message": "User has not stored any goals."}
+    
+    return goals
+
+@app.post("/goals/{goal_name}")
+def add_goal(goal_name: str, user_id: int, targ_amt: int, curr_amt: int, targ_date: datetime):
+    goal = Goal(
+        name=goal_name,
+        user_id=user_id,
+        target_amount=targ_amt,
+        current_amount=curr_amt,
+        target_date=targ_date
+    )
+
+    goal_json = goal.model_dump_json()
+    goals_collection.insert_one(goal_json)
+
+    return {"amount": goal.target_amount,
+            "name": goal.name,
+            "created_at":datetime.now()}
+
+@app.put("/user/{user_id}/preferences")
+def edit_user_preferences(user_id: int, prefs: UserPreferences):
+    user = users_collection.find_one({"id": user_id})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    prefs_json = prefs.model_dump_json()
+    users_collection.update_one(
+        { "id": user_id},
+        {"$set": {"preferences": prefs_json}}
+    )
+
+    return prefs_json
+
+@app.post("/user/{user_id}/preferences")
+def add_user_preferences(user_id: int, prefs: UserPreferences):
+    user = users_collection.find_one({"id": user_id})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    prefs_json = prefs.model_dump_json()
+    users_collection.update_one(
+        { "id": user_id},
+        {"$set": {"preferences": prefs_json}}
+    )
+
+    return prefs_json
+
+@app.post("/user/{user_id}/profile")
+def add_user_info(user_id: int, dob: datetime, last_name: str):
+    user = users_collection.find_one({"id": user_id})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    user.preferences.dob = dob
+    user.last_name = last_name
+    user_json = user.model_dump_json()
+    users_collection.insert_one(user_json)
+
+    return user_json
+
+@app.put("/user/{user_id}/password")
+def edit_user_password(user_id: int, old_password: str, new_password: str):
+    user = users_collection.find_one({"id": user_id})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    if user.password != old_password:
+        raise HTTPException(status_code=401, detail="Incorrect password.")
+    
+    users_collection.update_one(
+        { "id": user_id},
+        {"$set": {"password": new_password}}
+    )
+
+    return {"message": "Password changed successfully."}
+
+@app.put("/user/{user_id}/email")
+def edit_user_password(user_id: int, new_email: EmailStr):
+    user = users_collection.find_one({"id": user_id})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    users_collection.update_one(
+        { "id": user_id},
+        {"$set": {"email": new_email}}
+    )
+
+    return {"message": "Email changed successfully."}
+
+@app.post("/user/{user_id}/reset-preferences")
+def reset_user_preferences(user_id: int):
+    user = users_collection.find_one({"id": user_id})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    defaultPrefs = UserPreferences().model_dump_json()
+    users_collection.update_one(
+        { "id": user_id},
+        {"$set": {"preferences": defaultPrefs}}
+    )
+    return {"message": "Reset all preferences successfully."}
+
+@app.delete("/user/{user_id}/delete")
+def delete_user(user_id: int):
+    user = users_collection.find_one({"id": user_id})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    users_collection.delete_one({"id": user_id})
+
+    return {"message": "Deleted user records successfully."}
+    

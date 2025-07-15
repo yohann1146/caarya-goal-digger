@@ -2,6 +2,8 @@ import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
+load_dotenv()
+
 URI = os.getenv("MONGODB_URI")
 DB_NAME = os.getenv("DB_NAME")    
 

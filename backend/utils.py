@@ -1,6 +1,10 @@
-import jwt
+#import jwt
 import os
 import smtplib
+import requests
+#from bs4 import BeautifulSoup
+import json
+
 from email.message import EmailMessage
 from dotenv import load_dotenv
 
@@ -59,3 +63,37 @@ def send_reset_password(email: str):
             print(f"Reset password email sent to {email}")
     except Exception as e:
         print(f"Error sending email: {e}")
+
+def get_top_movers():
+    def fetch_data(url):
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
+        response = requests.get(url, headers=headers)
+        html = BeautifulSoup(response.text, 'html.parser')
+
+        data = []
+        table = html.find('table')
+        if not table:
+            return data
+
+        rows = table.find_all('tr')[1:11]
+        for r in rows:
+            cols = r.find_all('td')
+            if len(cols) >= 5:
+                name = cols[1].text.strip()
+                change = cols[5].text.strip()
+                data.append({
+                    "name": name,
+                    "change": change
+                })
+
+        return data
+
+    gainers_url = "https://finance.yahoo.com/markets/stocks/gainers/?start=0&count=10"
+    losers_url = "https://finance.yahoo.com/markets/stocks/losers/?start=0&count=10"
+
+    top_gainers = fetch_data(gainers_url)
+    top_losers = fetch_data(losers_url)
+
+    return top_gainers, top_losers
