@@ -1,8 +1,8 @@
-#import jwt
+import jwt
 import os
 import smtplib
 import requests
-#from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 import json
 
 from email.message import EmailMessage

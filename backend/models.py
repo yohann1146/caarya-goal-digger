@@ -21,6 +21,7 @@ class DateRange(Enum, str):
 class TransactionType(Enum, str):
     TO = "credit",
     FROM = "debit"
+    TRANSFER = "transfer"
 
 class GoalType(Enum, str):
     EDU = "educational"
@@ -28,11 +29,6 @@ class GoalType(Enum, str):
     PERSONAL = "personal"
     HOUSE = "housing"
     INSURANCE = "insurance"
-
-class GoalLength(Enum, str):
-    LONG = "long-term"
-    INTERMEDIATE = "intermediate"
-    SHORT = "short-term"
 
 class ColorMode(Enum, str):
     DARK = "dark"
@@ -74,24 +70,27 @@ class NewAccount(BaseModel):
     name: str
 
 class Account(BaseModel):
-    acc_id: int
+    acc_id: int = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: int
     name: str
     bal: int
     created_at: datetime
 
 class Transaction(BaseModel):
-    trans_id: int
+    name: str
+    trans_id: int = Field(default_factory=lambda: str(uuid.uuid4()))
     acc_id: int
     amount: int
     trans_type: TransactionType
     created_at: datetime
+    notes: Optional[str] = None
 
 class Goal(BaseModel):
     name: str
     user_id: int
-    goal_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    goal_id: id = Field(default_factory=lambda: str(uuid.uuid4()))
     target_amount: int
     current_amount: int = 0
     target_date: datetime = Field(default_factory=datetime.now()+timedelta(days=365)) #by default, goal is set a year from now
     color: str = "#FFFFFF"
+    goal_type: GoalType
